@@ -1,0 +1,179 @@
+#!/bin/bash
+SMB_CONF_FILE='/etc/samba/smb.conf'
+
+cmd_help() {
+	cat <<- HAHAHA
+	Usage   : ./start [options]
+	     eg : ./start -s public:/share/pub::rw -s admin:/share/admin:admin:rw -g 1000:smb -u 1000:smb:admin:123
+	Options :
+	     -s   <SMB Share Name>:<Path to share>:<User name>:<Read & write permissions>
+	     -g   <GID to be added>:<User group name>
+	     -u   <UID to use>:<User group name>:<User name>:<User passwd>
+	     -a   <n2n tunnel ip mode>:<n2n tunnel ip address>
+	     -c   <n2n community name>
+	     -k   <n2n encrypt key>
+	     -l   <n2n supernode host>:<n2n supernode port>
+         -r   n2n enable packet forwarding
+         -z   <number>
+              n2n enable compression for outgoing data packets, 1 to use lzo1x, 2 to use zstd
+         -A   <number>
+              1 same as n2n -A1, disable payload encryption
+              2 ~ 5, same as n2n -A2 ~ -A5, choose a cipher for payload encryption, 2=Twofish, 3=AES-CBC, 4=ChaCha20, 5=Speck-CTR
+         -M   <number>
+              n2n MTU of edge interface
+         -H   n2n enable full header encryption. Requires supernode with fixed community
+         -E   n2n accept multicast MAC addresses (default=drop)
+         -S   n2n not connect P2P. Always use the supernode
+         -D   n2n enable PMTU discovery
+HAHAHA
+	exit 0
+}
+
+cmd_parser() {
+	EDGE_PARA_A=''
+	EDGE_PARA_C=''
+	EDGE_PARA_K=''
+	EDGE_PARA_L=''
+	EDGE_PARA_AA=''
+	EDGE_PARA_M=''
+
+	EDGE_PARA_R=''
+	EDGE_PARA_Z=''
+	EDGE_PARA_H=''
+	EDGE_PARA_E=''
+	EDGE_PARA_S=''
+	EDGE_PARA_D=''
+	ARGS=$(getopt -o hs:g:u:a:c:k:l:rzA:M:HESD -n "$0" -- "$@")
+	eval set -- "${ARGS}"
+	while true
+	do
+		case "$1" in
+			'-h')
+				cmd_help
+				;;
+			'-D')
+				EDGE_PARA_D=' -D'
+				shift
+				;;
+			'-S')
+				EDGE_PARA_S=' -S'
+				shift
+				;;
+			'-E')
+				EDGE_PARA_E=' -E'
+				shift
+				;;
+			'-H')
+				EDGE_PARA_H=' -H'
+				shift
+				;;
+			'-z')
+				case $2 in
+					[1-2])
+						EDGE_PARA_Z=" -z${2}"
+						;;
+				esac
+				shift 2
+				;;
+			'-r')
+				EDGE_PARA_R=' -r'
+				shift
+				;;
+			'-M')
+				case $2 in
+					[1-9] | [1-9][0-9] | [1-9][0-9][0-9] | [1-9][0-9][0-9][0-9])
+						EDGE_PARA_M=" -M $2"
+						;;
+				esac
+				shift 2
+				;;
+			'-A')
+				case $2 in
+					[1-5])
+						EDGE_PARA_AA=" -A${2}"
+						;;
+				esac
+				shift 2
+				;;
+			'-a')
+				EDGE_PARA_A=" -a $2"
+				shift 2
+				;;
+			'-c')
+				EDGE_PARA_C=" -c $2"
+				shift 2
+				;;
+			'-k')
+				EDGE_PARA_K=" -k $2"
+				shift 2
+				;;
+			'-l')
+				EDGE_PARA_L=" -l $2"
+				shift 2
+				;;
+			'-g')
+				IFS=':' read GROUP_ID NAME <<< "$2"
+				id -g "${GROUP_ID}" &>/dev/null || id -gn "${NAME}" &>/dev/null || addgroup -g "${GROUP_ID}" -S "${NAME}"
+				shift 2
+				;;
+			'-u')
+				IFS=':' read USER_ID GROUP_NAME NAME PASSWD <<< "$2"
+				id -u "${USER_ID}" &>/dev/null || id -un "${NAME}" &>/dev/null || adduser -u "${USER_ID}" -G "${GROUP_NAME}" "${NAME}" -SHD
+				echo "${PASSWD}" | tee - | smbpasswd -s -a "${NAME}"
+				shift 2
+				;;
+			'-s')
+				IFS=':' read NAME DIR USERS RW <<< "$2"
+				echo "[${NAME}]" >> ${SMB_CONF_FILE}
+				echo "path = ${DIR}" >> ${SMB_CONF_FILE}
+				if [ -z "${USERS}" ]
+				then
+					echo "public = yes" >> ${SMB_CONF_FILE}
+					echo "guest ok = yes" >> ${SMB_CONF_FILE}
+				else
+					echo "valid users = ${USERS}" >> ${SMB_CONF_FILE}
+					echo "write list = ${USERS}" >> ${SMB_CONF_FILE}
+				fi
+				case $RW in
+					'rw')
+						echo 'browseable = yes' >> ${SMB_CONF_FILE}
+						echo 'writable = yes' >> ${SMB_CONF_FILE}
+						echo 'read only = no' >> ${SMB_CONF_FILE}
+						echo 'printable = no' >> ${SMB_CONF_FILE}
+						;;
+					'rwp')
+						echo 'browseable = yes' >> ${SMB_CONF_FILE}
+						echo 'writable = yes' >> ${SMB_CONF_FILE}
+						echo 'read only = no' >> ${SMB_CONF_FILE}
+						echo 'printable = yes' >> ${SMB_CONF_FILE}
+						;;
+					'p')
+						echo 'browseable = no' >> ${SMB_CONF_FILE}
+						echo 'writable = no' >> ${SMB_CONF_FILE}
+						echo 'read only = yes' >> ${SMB_CONF_FILE}
+						echo 'printable = yes' >> ${SMB_CONF_FILE}
+						;;
+					*)
+						echo 'browseable = yes' >> ${SMB_CONF_FILE}
+						echo 'writable = no' >> ${SMB_CONF_FILE}
+						echo 'read only = yes' >> ${SMB_CONF_FILE}
+						echo 'printable = no' >> ${SMB_CONF_FILE}
+						;;
+				esac
+				shift 2
+				;;
+			'--')
+				shift
+				break
+				;;
+		esac
+	done
+
+	EDGE_CMD="edge -d n2n0${EDGE_PARA_A}${EDGE_PARA_C}${EDGE_PARA_K}${EDGE_PARA_L}${EDGE_PARA_AA}${EDGE_PARA_M}${EDGE_PARA_R}${EDGE_PARA_Z}${EDGE_PARA_H}${EDGE_PARA_E}${EDGE_PARA_S}${EDGE_PARA_D}"
+	${EDGE_CMD}
+	echo "${EDGE_CMD}"
+	nmbd -D
+	exec ionice -c 2 smbd -FS --no-process-group --configfile="${SMB_CONF_FILE}" < /dev/null
+}
+
+cmd_parser $@
