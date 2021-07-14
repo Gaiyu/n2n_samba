@@ -13,18 +13,18 @@ cmd_help() {
 	     -c   <n2n community name>
 	     -k   <n2n encrypt key>
 	     -l   <n2n supernode host>:<n2n supernode port>
-         -r   n2n enable packet forwarding
-         -z   <number>
-              n2n enable compression for outgoing data packets, 1 to use lzo1x, 2 to use zstd
-         -A   <number>
-              1 same as n2n -A1, disable payload encryption
-              2 ~ 5, same as n2n -A2 ~ -A5, choose a cipher for payload encryption, 2=Twofish, 3=AES-CBC, 4=ChaCha20, 5=Speck-CTR
-         -M   <number>
-              n2n MTU of edge interface
-         -H   n2n enable full header encryption. Requires supernode with fixed community
-         -E   n2n accept multicast MAC addresses (default=drop)
-         -S   n2n not connect P2P. Always use the supernode
-         -D   n2n enable PMTU discovery
+	     -r   n2n enable packet forwarding
+	     -z   <number>
+	          n2n enable compression for outgoing data packets, 1 to use lzo1x, 2 to use zstd
+	     -A   <number>
+	          1 same as n2n -A1, disable payload encryption
+	          2 ~ 5, same as n2n -A2 ~ -A5, choose a cipher for payload encryption, 2=Twofish, 3=AES-CBC, 4=ChaCha20, 5=Speck-CTR
+	     -M   <number>
+	          n2n MTU of edge interface
+	     -H   n2n enable full header encryption. Requires supernode with fixed community
+	     -E   n2n accept multicast MAC addresses (default=drop)
+	     -S   n2n not connect P2P. Always use the supernode
+	     -D   n2n enable PMTU discovery
 HAHAHA
 	exit 0
 }
