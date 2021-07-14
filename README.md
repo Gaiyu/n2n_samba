@@ -1,4 +1,4 @@
-# n2n_samba
+# n2n_samba [![](https://img.shields.io/badge/dynamic/json?label=Docker%20Pulls&query=%24.pull_count&url=https%3A%2F%2Fhub.docker.com%2Fv2%2Frepositories%2Fgaiyu%2Fn2n_samba%2F)]
 
 Docker image that packs n2n and samba together, for remote access to SMB/CIFS service.
 
