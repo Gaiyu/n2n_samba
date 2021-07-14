@@ -70,7 +70,7 @@ Then the startup script can be written as follows:
 
 ``` sh
 #!/bin/sh
-IMAGE_NAME='n2n_samba'
+IMAGE_NAME='gaiyu/n2n_samba'
 IMAGE_TAG='latest'
 IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
 SHARE_DIR='/home/gaiyu/mynas/data'
