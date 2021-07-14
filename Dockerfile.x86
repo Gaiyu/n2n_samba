@@ -1,4 +1,4 @@
-FROM alpine:3.14 AS builder                                                                                                           
+FROM alpine:3.14 AS builder
 WORKDIR /
 COPY n2n-2.8.tar.gz /
 RUN set -eux; \
