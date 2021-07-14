@@ -1,12 +1,18 @@
 # n2n_samba
+
 Docker image that packs n2n and samba together, for remote access to SMB/CIFS service.
+
 ## Build
+
 Just 2 steps:
  * Run build.sh
+
 ``` sh
 ./build.sh
 ```
- * Follow the menu
+
+* Follow the menu
+
 ``` sh
 --------------------------
 Please choose a platform :
@@ -18,8 +24,11 @@ Select a number [1-2], or press '[Q/q] to exit...
 q
 bye!
 ```
+
 ## Serve
+
 The command line interface of the entry script of the docker image is as follows, starting a n2n_samba container is to provide parameters for this script.
+
 ``` sh
 Usage   : ./start [options]
      eg : ./start -s public:/share/pub::rw -s admin:/share/admin:admin:rw -g 1000:smb -u 1000:smb:admin:123
@@ -44,7 +53,9 @@ Options :
      -S   n2n not connect P2P. Always use the supernode
      -D   n2n enable PMTU discovery
 ```
+
 Suppose you want to publish the pub directory as an anonymous access share in the following directory structure, and the admin directory is only open to users whose username is admin and password is 123.
+
 ``` sh
 /home/gaiyu/mynas/data/
 ├── admin
@@ -54,7 +65,9 @@ Suppose you want to publish the pub directory as an anonymous access share in th
 
 2 directories, 2 files
 ```
+
 Then the startup script can be written as follows:
+
 ``` sh
 #!/bin/sh
 IMAGE_NAME='n2n_samba'
@@ -65,3 +78,4 @@ N2N_PARA='-a static:192.168.6.2 -c XXXX -k XXXX -l n2n.XXXX.com:XXXX'
 PARA="-s public:/share/pub::rw -s admin:/share/admin:admin:rw -g 1000:smb -u 1000:smb:admin:123 ${N2N_PARA}"
 docker run --cap-add CAP_NET_ADMIN --device '/dev/net/tun' -d -p 445:445 -v ${SHARE_DIR}:/share ${IMAGE} ${PARA}
 ```
+
